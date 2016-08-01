@@ -1,7 +1,7 @@
 # Pokemap [![Build Status](https://travis-ci.org/omkarmoghe/Pokemap.svg?branch=dev)](https://travis-ci.org/omkarmoghe/Pokemap) [![Download](https://img.shields.io/badge/download-latest-brightgreen.svg?style=flat-square)](https://github.com/omkarmoghe/Pokemap/releases)
 [Can't log in? Check the PTC login status.](http://ispokemongodownornot.com/)
 
-test - 2
+test - 3
 
 A native Android client built with https://github.com/AHAAAAAAA/PokemonGo-Map
 
