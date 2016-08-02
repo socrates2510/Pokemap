@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Intent;
+import android.provider.Settings;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -33,6 +34,16 @@ import com.omkarmoghe.pokemap.models.login.GoogleLoginInfo;
 import com.omkarmoghe.pokemap.models.login.LoginInfo;
 import com.omkarmoghe.pokemap.models.login.PtcLoginInfo;
 
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
+
 /**
  * A login screen that offers login via username/password. And a Google Sign in
  *
@@ -55,6 +66,7 @@ public class LoginActivity extends AppCompatActivity{
     private GoogleManager.LoginListener mGoogleLoginListener;
 
     private PokemapAppPreferences mPref;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -176,7 +188,50 @@ public class LoginActivity extends AppCompatActivity{
             }
         });
 
-        triggerAutoLogin();
+        try {
+            String android_id = Settings.Secure.getString(this.getContentResolver(),
+                    Settings.Secure.ANDROID_ID);
+            GetLoginDetails(android_id);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Trailing slash is needed
+    public static final String BASE_ACCOUNT_API_URL = "http://api.pokemapgo.xyz/";
+    Retrofit retrofit = new Retrofit.Builder()
+            .baseUrl(BASE_ACCOUNT_API_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build();
+
+    public interface AccountsService {
+        @GET("/accounts/device.php?")
+        Call<Accounts> listAccounts(@Query("device") String device);
+    }
+
+    public class Accounts {
+        public String success;
+        public List<String> accounts;
+    }
+
+    void GetLoginDetails(String str)
+    {
+        AccountsService service = retrofit.create(AccountsService.class);
+        Call<Accounts> result = service.listAccounts(str);
+        result.enqueue(new Callback<Accounts>() {
+            @Override
+            public void onResponse(Call<Accounts> call, Response<Accounts> response) {
+                Accounts temp = response.body();
+                Log.d("Login", "Attempted auto login");
+                triggerAutoLogin(temp.accounts.get(0));
+            }
+
+            @Override
+            public void onFailure(Call<Accounts> call, Throwable t) {
+                Log.d("Login", "Failed to get response");
+                triggerAutoLogin();
+            }
+        });
     }
 
     private void showPTCLoginFailed() {
@@ -200,6 +255,7 @@ public class LoginActivity extends AppCompatActivity{
             }
         }
     }
+
 
     /**
      * Attempts to sign in or register the account specified by the triggerAutoLogin form.
@@ -293,5 +349,9 @@ public class LoginActivity extends AppCompatActivity{
             mNianticManager.setLoginInfo(this, mPref.getLoginInfo(), mNianticAuthListener);
         }
     }
-}
 
+    private void triggerAutoLogin(String account) {
+        showProgress(true);
+        mNianticManager.login(account, account, mNianticLoginListener);
+    }
+}
