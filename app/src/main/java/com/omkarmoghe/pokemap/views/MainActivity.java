@@ -231,9 +231,9 @@ public class MainActivity extends BaseActivity {
         List<LatLng> list = MapHelper.getSearchArea(event.getSteps(), new LatLng(event.getPosition().latitude, event.getPosition().longitude));
         snackMe(getString(R.string.toast_searching));
 
-        nianticManager.getGyms(event.getPosition().latitude, event.getPosition().longitude, 0D);
-        nianticManager.getPokeStops(event.getPosition().latitude, event.getPosition().longitude, 0D);
-        nianticManager.getLuredPokemon(event.getPosition().latitude, event.getPosition().longitude, 0D);
+        if(pref.getShowGyms()) nianticManager.getGyms(event.getPosition().latitude, event.getPosition().longitude, 0D);
+        if(pref.getShowPokestops()) nianticManager.getPokeStops(event.getPosition().latitude, event.getPosition().longitude, 0D);
+        if(pref.getShowLuredPokemon()) nianticManager.getLuredPokemon(event.getPosition().latitude, event.getPosition().longitude, 0D);
 
         for (LatLng p : list) {
             nianticManager.getCatchablePokemon(p.latitude, p.longitude, 0D);
