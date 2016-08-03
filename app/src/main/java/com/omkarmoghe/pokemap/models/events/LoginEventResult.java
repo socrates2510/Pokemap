@@ -1,6 +1,9 @@
 package com.omkarmoghe.pokemap.models.events;
 
-import com.pokegoapi.api.PokemonGo;
+
+import com.omkarmoghe.pokemap.models.login.LoginInfo;
+import com.wanderingcan.pokegoapi.api.PokemonGo;
+
 import POGOProtos.Networking.Envelopes.RequestEnvelopeOuterClass.RequestEnvelope.AuthInfo;
 
 /**
@@ -9,10 +12,10 @@ import POGOProtos.Networking.Envelopes.RequestEnvelopeOuterClass.RequestEnvelope
 public class LoginEventResult implements IEvent {
 
     private boolean loggedIn;
-    private AuthInfo authInfo;
+    private LoginInfo authInfo;
     private PokemonGo pokemonGo;
 
-    public LoginEventResult(boolean loggedIn, AuthInfo authInfo, PokemonGo pokemonGo) {
+    public LoginEventResult(boolean loggedIn, LoginInfo authInfo, PokemonGo pokemonGo) {
         this.loggedIn = loggedIn;
         this.authInfo = authInfo;
         this.pokemonGo = pokemonGo;
@@ -26,11 +29,11 @@ public class LoginEventResult implements IEvent {
         this.loggedIn = loggedIn;
     }
 
-    public AuthInfo getAuthInfo() {
+    public LoginInfo getAuthInfo() {
         return authInfo;
     }
 
-    public void setAuthInfo(AuthInfo authInfo) {
+    public void setAuthInfo(LoginInfo authInfo) {
         this.authInfo = authInfo;
     }
 

@@ -5,17 +5,12 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
-import android.util.ArraySet;
 import android.util.Log;
 
 import com.omkarmoghe.pokemap.models.login.GoogleLoginInfo;
 import com.omkarmoghe.pokemap.models.login.LoginInfo;
 import com.omkarmoghe.pokemap.models.login.PtcLoginInfo;
-import com.pokegoapi.api.pokemon.Pokemon;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -119,7 +114,7 @@ public final class PokemapSharedPreferences implements PokemapAppPreferences {
         if(loginInfo instanceof PtcLoginInfo){
             Set<String> info = new HashSet<>();
             PtcLoginInfo ptc = (PtcLoginInfo) loginInfo;
-            info.add(INFO_TOKEN + ptc.getToken());
+            info.add(INFO_TOKEN + ptc.getTokenId());
             info.add(INFO_USERNAME + ptc.getUsername());
             info.add(INFO_PASSWORD + ptc.getPassword());
             sharedPreferences.edit().putStringSet(PTC_INFO_KEY, info).apply();
@@ -128,7 +123,7 @@ public final class PokemapSharedPreferences implements PokemapAppPreferences {
         if(loginInfo instanceof GoogleLoginInfo){
             Set<String> info = new HashSet<>();
             GoogleLoginInfo google = (GoogleLoginInfo) loginInfo;
-            info.add(INFO_TOKEN + google.getToken());
+            info.add(INFO_TOKEN + google.getTokenId());
             info.add(INFO_REFRESH + google.getRefreshToken());
             Log.d(TAG, "setLoginInfo: Googleinfo = " + info);
             sharedPreferences.edit().putStringSet(GOOGLE_INFO_KEY, info).apply();

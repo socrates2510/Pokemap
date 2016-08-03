@@ -1,6 +1,7 @@
 package com.omkarmoghe.pokemap.models.events;
 
-import com.pokegoapi.exceptions.RemoteServerException;
+
+import com.wanderingcan.pokegoapi.exceptions.RemoteServerException;
 
 /**
  * Created by Jon on 7/23/2016.

@@ -1,6 +1,7 @@
 package com.omkarmoghe.pokemap.models.events;
 
-import com.pokegoapi.api.map.pokemon.CatchablePokemon;
+
+import com.wanderingcan.pokegoapi.api.map.pokemon.CatchablePokemon;
 
 import java.util.List;
 

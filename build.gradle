@@ -20,6 +20,7 @@ allprojects {
             name "Jitpack"
             url "https://jitpack.io"
         }
+        maven { url "http://dl.bintray.com/s7092910/maven" }
     }
 }
 task clean(type: Delete) {
