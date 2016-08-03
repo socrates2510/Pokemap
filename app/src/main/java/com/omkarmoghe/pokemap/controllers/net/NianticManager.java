@@ -85,7 +85,7 @@ public class NianticManager {
     private int currentBatchCall = 0;
 
     private int currentThread = 0;
-    public int nianticThreads = 5;
+    public int nianticThreads = 10;
 
     public static NianticManager getInstance(){
         return instance;
@@ -299,7 +299,7 @@ public class NianticManager {
             try {
                 int currentApi = currentThread % nianticThreads;
                 AuthInfo mAuthInfo = info.createAuthInfo();
-                Thread.sleep(1000);
+                Thread.sleep(133);
                 PokemonGo pokemonGo = new PokemonGo(mAuthInfo, mPoGoClient.get(currentApi));
                 mPokemonGo.add(pokemonGo);
                 EventBus.getDefault().post(new LoginEventResult(true, mAuthInfo, mPokemonGo.get(currentApi)));
@@ -323,7 +323,7 @@ public class NianticManager {
                 try {
                     int currentApi = currentThread % nianticThreads;
                     AuthInfo mAuthInfo = info.createAuthInfo();
-                    Thread.sleep(1000);
+                    Thread.sleep(133);
                     PokemonGo pokemonGo = new PokemonGo(mAuthInfo, mPoGoClient.get(currentApi));
                     mPokemonGo.add(pokemonGo);
                     activity.runOnUiThread(new Runnable() {
@@ -358,7 +358,7 @@ public class NianticManager {
                     if (currentApi != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
                         Thread.sleep(133);
                         currentApi.setLocation(lat, longitude, alt);
-                        Thread.sleep(1000);
+                        Thread.sleep(5000 / NianticManager.this.nianticThreads);
                         List<CatchablePokemon> catchablePokemons = currentApi.getMap().getCatchablePokemon();
                         if (NianticManager.this.currentBatchCall == myCurrentBatch) EventBus.getDefault().post(new CatchablePokemonEvent(catchablePokemons, lat, longitude));
                     }
@@ -394,7 +394,7 @@ public class NianticManager {
                     if (currentApi != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
                         Thread.sleep(133);
                         currentApi.setLocation(lat, longitude, alt);
-                        Thread.sleep(1000);
+                        Thread.sleep(5000 / NianticManager.this.nianticThreads);
 
                         List<CatchablePokemon> pokemon = new ArrayList<>();
                         for(Pokestop pokestop: currentApi.getMap().getMapObjects().getPokestops()){
@@ -436,7 +436,7 @@ public class NianticManager {
                     if (currentApi != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
                         Thread.sleep(133);
                         currentApi.setLocation(lat, longitude, alt);
-                        Thread.sleep(1000);
+                        Thread.sleep(5000 / NianticManager.this.nianticThreads);
 
                         Collection<Pokestop> pokestops = currentApi.getMap().getMapObjects().getPokestops();
                         if (NianticManager.this.currentBatchCall == myCurrentBatch) EventBus.getDefault().post(new PokestopsEvent(pokestops, lat, longitude));
@@ -472,7 +472,7 @@ public class NianticManager {
                 if (currentApi != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
                     Thread.sleep(133);
                     currentApi.setLocation(latitude, longitude, alt);
-                    Thread.sleep(1000);
+                    Thread.sleep(5000 / NianticManager.this.nianticThreads);
 
                     Collection<FortDataOuterClass.FortData> gyms = currentApi.getMap().getMapObjects().getGyms();
                     if (NianticManager.this.currentBatchCall == myCurrentBatch) EventBus.getDefault().post(new GymsEvent(gyms, latitude, longitude));
