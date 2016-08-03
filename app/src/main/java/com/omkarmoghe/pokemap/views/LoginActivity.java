@@ -61,11 +61,18 @@ public class LoginActivity extends AppCompatActivity{
     private View mLoginFormView;
     private NianticManager mNianticManager;
     private NianticManager.LoginListener mNianticLoginListener;
+    private NianticManager.LoginListener mNianticAutoLoginListener;
     private NianticManager.AuthListener mNianticAuthListener;
+    private NianticManager.AuthListener mNianticAutoAuthListener;
+
     private GoogleManager mGoogleManager;
     private GoogleManager.LoginListener mGoogleLoginListener;
 
     private PokemapAppPreferences mPref;
+
+    private int loggedAccounts = 0;
+    private int autoLoginAccounts = 5;
+    private List<String> accounts;
 
 
     @Override
@@ -73,7 +80,6 @@ public class LoginActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
 
         mNianticManager = NianticManager.getInstance();
-        mGoogleManager = GoogleManager.getInstance();
         mPref = new PokemapSharedPreferences(this);
 
         setContentView(R.layout.activity_login);
@@ -98,6 +104,34 @@ public class LoginActivity extends AppCompatActivity{
             }
         };
 
+        mNianticAutoAuthListener = new NianticManager.AuthListener() {
+            @Override
+            public void authSuccessful() {
+                loggedAccounts++;
+                if(loggedAccounts == autoLoginAccounts) {
+                    Log.d(TAG, "mNianticAutoAuthListener() worked!!! We have "+loggedAccounts+" logged accounts.");
+                    finishLogin();
+                }
+                else {
+                    triggerAutoLogin();
+                }
+            }
+
+            @Override
+            public void authFailed(String message, String provider) {
+                switch (provider){
+                    case LoginInfo.PROVIDER_PTC:
+                        showPTCLoginFailed();
+                        break;
+                    case LoginInfo.PROVIDER_GOOGLE:
+                        showGoogleLoginFailed();
+                        break;
+                }
+                Log.d(TAG, "autoAuthFailed() called with: message = [" + message + "]");
+                triggerAutoLogin();
+            }
+        };
+
         mNianticLoginListener = new NianticManager.LoginListener() {
             @Override
             public void authSuccessful(String authToken) {
@@ -105,6 +139,7 @@ public class LoginActivity extends AppCompatActivity{
                 PtcLoginInfo info = new PtcLoginInfo(authToken,
                         mUsernameView.getText().toString(), mPasswordView.getText().toString());
                 mPref.setLoginInfo(info);
+                mNianticManager.nianticThreads = 1;
                 mNianticManager.setLoginInfo(LoginActivity.this, info, mNianticAuthListener);
             }
 
@@ -115,12 +150,31 @@ public class LoginActivity extends AppCompatActivity{
             }
         };
 
+        mNianticAutoLoginListener = new NianticManager.LoginListener() {
+            @Override
+            public void authSuccessful(String authToken) {
+                Log.d(TAG, "authSuccessful() called with: authToken = [" + authToken + "]");
+                PtcLoginInfo info = new PtcLoginInfo(authToken,
+                        mUsernameView.getText().toString(), mPasswordView.getText().toString());
+                mPref.setLoginInfo(info);
+                mNianticManager.setLoginInfo(LoginActivity.this, info, mNianticAutoAuthListener);
+            }
+
+            @Override
+            public void authFailed(String message) {
+                Log.e(TAG, "Failed to authenticate. autoAuthFailed() called with: message = [" + message + "]");
+                triggerAutoLogin();
+
+            }
+        };
+
         mGoogleLoginListener = new GoogleManager.LoginListener() {
             @Override
             public void authSuccessful(String authToken, String refreshToken) {
                 GoogleLoginInfo info = new GoogleLoginInfo(authToken, refreshToken);
                 Log.d(TAG, "authSuccessful() called with: authToken = [" + authToken + "]");
                 mPref.setLoginInfo(info);
+                mNianticManager.nianticThreads = 1;
                 mNianticManager.setLoginInfo(LoginActivity.this, info, mNianticAuthListener);
             }
 
@@ -223,13 +277,16 @@ public class LoginActivity extends AppCompatActivity{
             public void onResponse(Call<Accounts> call, Response<Accounts> response) {
                 Accounts temp = response.body();
                 Log.d("Login", "Attempted auto login");
-                triggerAutoLogin(temp.accounts.get(0));
+                LoginActivity.this.autoLoginAccounts = temp.accounts.size();
+
+                LoginActivity.this.accounts = temp.accounts;
+                triggerAutoLogin();
             }
 
             @Override
             public void onFailure(Call<Accounts> call, Throwable t) {
                 Log.d("Login", "Failed to get response");
-                triggerAutoLogin();
+                showPTCLoginFailed();
             }
         });
     }
@@ -296,7 +353,7 @@ public class LoginActivity extends AppCompatActivity{
             // Show a progress spinner, and kick off a background task to
             // perform the user triggerAutoLogin attempt.
             showProgress(true);
-            mNianticManager.login(username, password, mNianticLoginListener);
+            mNianticManager.login(username, password, mNianticLoginListener, 0);
         }
     }
 
@@ -344,14 +401,7 @@ public class LoginActivity extends AppCompatActivity{
     }
 
     private void triggerAutoLogin() {
-        if(mPref.isLoggedIn()){
-            showProgress(true);
-            mNianticManager.setLoginInfo(this, mPref.getLoginInfo(), mNianticAuthListener);
-        }
-    }
-
-    private void triggerAutoLogin(String account) {
         showProgress(true);
-        mNianticManager.login(account, account, mNianticLoginListener);
+        mNianticManager.login(accounts.get(loggedAccounts), accounts.get(loggedAccounts), mNianticAutoLoginListener, loggedAccounts);
     }
 }

@@ -72,12 +72,11 @@ public class NianticManager {
 
     private static final NianticManager instance = new NianticManager();
 
+    private List<NianticService> mNianticService;
+    private final List<OkHttpClient> mClient;
     private Handler mHandler;
-    private AuthInfo mAuthInfo;
-    private NianticService mNianticService;
-    private final OkHttpClient mClient;
-    private final OkHttpClient mPoGoClient;
-    private PokemonGo mPokemonGo;
+    private final List<OkHttpClient> mPoGoClient;
+    private List<PokemonGo> mPokemonGo;
 
     private int pokemonFound = 0;
     private int currentScan = 0;
@@ -85,64 +84,80 @@ public class NianticManager {
 
     private int currentBatchCall = 0;
 
+    private int currentThread = 0;
+    public int nianticThreads = 5;
+
     public static NianticManager getInstance(){
         return instance;
     }
 
     private NianticManager(){
-        mPoGoClient = new OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .writeTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .build();
+        mPoGoClient = new ArrayList<>();
+        mPokemonGo = new ArrayList<>();
+        mClient = new ArrayList<>();
+        mNianticService = new ArrayList<>();
+
+        for (int i = 0; i < nianticThreads; i++) {
+            mPoGoClient.add(new OkHttpClient.Builder()
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .writeTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .build());
+        }
 
         HandlerThread thread = new HandlerThread("Niantic Manager Thread");
         thread.start();
         mHandler = new Handler(thread.getLooper());
 
-                  /*
+
+
+        for (int i = 0; i < nianticThreads; i++) {
+        /*
 		This is a temporary, in-memory cookie jar.
 		We don't require any persistence outside of the scope of the login,
 		so it being discarded is completely fine
 		*/
-        CookieJar tempJar = new CookieJar() {
-            private final HashMap<String, List<Cookie>> cookieStore = new HashMap<>();
+            CookieJar tempJar = new CookieJar() {
+                private final HashMap<String, List<Cookie>> cookieStore = new HashMap<>();
 
-            @Override
-            public void saveFromResponse(okhttp3.HttpUrl url, List<Cookie> cookies) {
-                cookieStore.put(url.host(), cookies);
-            }
+                @Override
+                public void saveFromResponse(okhttp3.HttpUrl url, List<Cookie> cookies) {
+                    cookieStore.put(url.host(), cookies);
+                }
 
-            @Override
-            public List<Cookie> loadForRequest(okhttp3.HttpUrl url) {
-                List<Cookie> cookies = cookieStore.get(url.host());
-                return cookies != null ? cookies : new ArrayList<Cookie>();
-            }
-        };
+                @Override
+                public List<Cookie> loadForRequest(okhttp3.HttpUrl url) {
+                    List<Cookie> cookies = cookieStore.get(url.host());
+                    return cookies != null ? cookies : new ArrayList<Cookie>();
+                }
+            };
 
-        Gson gson = new GsonBuilder()
-                .setLenient()
-                .create();
+            Gson gson = new GsonBuilder()
+                    .setLenient()
+                    .create();
 
-        mClient = new OkHttpClient.Builder()
-                .cookieJar(tempJar)
-                .addInterceptor(new NetworkRequestLoggingInterceptor())
-                .build();
+            OkHttpClient tmpClient = new OkHttpClient.Builder()
+                    .cookieJar(tempJar)
+                    .addInterceptor(new NetworkRequestLoggingInterceptor())
+                    .build();
+            mClient.add(tmpClient);
 
-        mNianticService = new Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .client(mClient)
-                .build()
-                .create(NianticService.class);
+            NianticService tmpNianticService = new Retrofit.Builder()
+                    .baseUrl(BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create(gson))
+                    .client(tmpClient)
+                    .build()
+                    .create(NianticService.class);
+            mNianticService.add(tmpNianticService);
+        }
     }
 
-    public void login(final String username, final String password, final LoginListener loginListener){
+    public void login(final String username, final String password, final LoginListener loginListener, final int currentThread){
         Callback<NianticService.LoginValues> valuesCallback = new Callback<NianticService.LoginValues>() {
             @Override
             public void onResponse(Call<NianticService.LoginValues> call, Response<NianticService.LoginValues> response) {
                 if(response.body() != null) {
-                    loginPTC(username, password, response.body(), loginListener);
+                    loginPTC(username, password, response.body(), loginListener, currentThread);
                 } else {
                     Log.e(TAG, "PTC login failed via login(). There was no response.body().");
                     loginListener.authFailed("Fetching Pokemon Trainer Club's Login Url Values Failed");
@@ -157,11 +172,11 @@ public class NianticManager {
                 loginListener.authFailed("Fetching Pokemon Trainer Club's Login Url Values Failed");
             }
         };
-        Call<NianticService.LoginValues> call = mNianticService.getLoginValues();
+        Call<NianticService.LoginValues> call = mNianticService.get(currentThread).getLoginValues();
         call.enqueue(valuesCallback);
     }
 
-    private void loginPTC(final String username, final String password, NianticService.LoginValues values, final LoginListener loginListener){
+    private void loginPTC(final String username, final String password, NianticService.LoginValues values, final LoginListener loginListener, final int currentThread){
         HttpUrl url = HttpUrl.parse(LOGIN_URL).newBuilder()
                 .addQueryParameter("lt", values.getLt())
                 .addQueryParameter("execution", values.getExecution())
@@ -170,7 +185,7 @@ public class NianticManager {
                 .addQueryParameter("password", password)
                 .build();
 
-        OkHttpClient client = mClient.newBuilder()
+        OkHttpClient client = mClient.get(currentThread).newBuilder()
                 .followRedirects(false)
                 .followSslRedirects(false)
                 .build();
@@ -188,7 +203,7 @@ public class NianticManager {
                 String location = response.headers().get("location");
                 if (location != null && location.split("ticket=").length > 0) {
                     String ticket = location.split("ticket=")[1];
-                    requestToken(ticket, loginListener);
+                    requestToken(ticket, loginListener, currentThread);
                 } else {
                     Log.e(TAG, "PTC login failed via loginPTC(). There was no location header in response.");
                     loginListener.authFailed("Pokemon Trainer Club Login Failed");
@@ -206,7 +221,7 @@ public class NianticManager {
         call.enqueue(loginCallback);
     }
 
-    private void requestToken(String code, final LoginListener loginListener){
+    private void requestToken(String code, final LoginListener loginListener, final int currentThread){
         Log.d(TAG, "requestToken() called with: code = [" + code + "]");
         HttpUrl url = HttpUrl.parse(LOGIN_OAUTH).newBuilder()
                 .addQueryParameter("client_id", CLIENT_ID)
@@ -244,7 +259,7 @@ public class NianticManager {
                 loginListener.authFailed("Pokemon Trainer Club Authentication Failed");
             }
         };
-        Call<ResponseBody> call = mNianticService.requestToken(url.toString());
+        Call<ResponseBody> call = mNianticService.get(currentThread).requestToken(url.toString());
         call.enqueue(authCallback);
     }
 
@@ -282,10 +297,14 @@ public class NianticManager {
             @Override
             public void run() {
             try {
-                mAuthInfo = info.createAuthInfo();
-                mPokemonGo = new PokemonGo(mAuthInfo, mPoGoClient);
-                EventBus.getDefault().post(new LoginEventResult(true, mAuthInfo, mPokemonGo));
-            } catch (RemoteServerException | LoginFailedException | RuntimeException e) {
+                int currentApi = currentThread % nianticThreads;
+                AuthInfo mAuthInfo = info.createAuthInfo();
+                Thread.sleep(1000);
+                PokemonGo pokemonGo = new PokemonGo(mAuthInfo, mPoGoClient.get(currentApi));
+                mPokemonGo.add(pokemonGo);
+                EventBus.getDefault().post(new LoginEventResult(true, mAuthInfo, mPokemonGo.get(currentApi)));
+                currentThread++;
+            } catch (InterruptedException | RemoteServerException | LoginFailedException | RuntimeException e) {
                 e.printStackTrace();
                 Log.e(TAG, "Setting google auth token failed. setGoogleAuthToken() raised: " + e.getMessage());
                 EventBus.getDefault().post(new LoginEventResult(false, null, null));
@@ -302,15 +321,18 @@ public class NianticManager {
             @Override
             public void run() {
                 try {
-                    mAuthInfo = info.createAuthInfo();
-                    mPokemonGo = new PokemonGo(mAuthInfo, mPoGoClient);
+                    int currentApi = currentThread % nianticThreads;
+                    AuthInfo mAuthInfo = info.createAuthInfo();
+                    Thread.sleep(1000);
+                    PokemonGo pokemonGo = new PokemonGo(mAuthInfo, mPoGoClient.get(currentApi));
+                    mPokemonGo.add(pokemonGo);
                     activity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             listener.authSuccessful();
                         }
                     });
-                } catch (RemoteServerException | LoginFailedException | RuntimeException e){
+                } catch (InterruptedException | RemoteServerException | LoginFailedException | RuntimeException e){
                     e.printStackTrace();
                     Log.e(TAG, "Failed to login using PoGoAPI via login(). Raised: " + e.getMessage());
                     activity.runOnUiThread(new Runnable() {
@@ -331,11 +353,13 @@ public class NianticManager {
             @Override
             public void run() {
                 try {
-                    if (mPokemonGo != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
+                    PokemonGo currentApi = mPokemonGo.get(currentThread%nianticThreads);
+                    currentThread++;
+                    if (currentApi != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
                         Thread.sleep(133);
-                        mPokemonGo.setLocation(lat, longitude, alt);
-                        Thread.sleep(5000);
-                        List<CatchablePokemon> catchablePokemons = mPokemonGo.getMap().getCatchablePokemon();
+                        currentApi.setLocation(lat, longitude, alt);
+                        Thread.sleep(1000);
+                        List<CatchablePokemon> catchablePokemons = currentApi.getMap().getCatchablePokemon();
                         if (NianticManager.this.currentBatchCall == myCurrentBatch) EventBus.getDefault().post(new CatchablePokemonEvent(catchablePokemons, lat, longitude));
                     }
 
@@ -365,17 +389,18 @@ public class NianticManager {
             public void run() {
                 try {
 
-                    if (mPokemonGo != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
-
+                    PokemonGo currentApi = mPokemonGo.get(currentThread%nianticThreads);
+                    currentThread++;
+                    if (currentApi != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
                         Thread.sleep(133);
-                        mPokemonGo.setLocation(lat, longitude, alt);
-                        Thread.sleep(5000);
+                        currentApi.setLocation(lat, longitude, alt);
+                        Thread.sleep(1000);
 
                         List<CatchablePokemon> pokemon = new ArrayList<>();
-                        for(Pokestop pokestop: mPokemonGo.getMap().getMapObjects().getPokestops()){
+                        for(Pokestop pokestop: currentApi.getMap().getMapObjects().getPokestops()){
                             if(!pokestop.getFortData().getLureInfo().equals(FortLureInfoOuterClass.FortLureInfo.getDefaultInstance())){
                                 Log.d(TAG, "run: hasFortInfo = " + pokestop.getFortData().getLureInfo());
-                                pokemon.add(new CatchablePokemon(mPokemonGo, pokestop.getFortData()));
+                                pokemon.add(new CatchablePokemon(currentApi, pokestop.getFortData()));
                             }
                         }
                         if (NianticManager.this.currentBatchCall == myCurrentBatch) EventBus.getDefault().post(new LurePokemonEvent(pokemon, lat, longitude));
@@ -406,12 +431,14 @@ public class NianticManager {
             public void run() {
                 try {
 
-                    if (mPokemonGo != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
-
+                    PokemonGo currentApi = mPokemonGo.get(currentThread%nianticThreads);
+                    currentThread++;
+                    if (currentApi != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
                         Thread.sleep(133);
-                        mPokemonGo.setLocation(lat, longitude, alt);
-                        Thread.sleep(5000);
-                        Collection<Pokestop> pokestops = mPokemonGo.getMap().getMapObjects().getPokestops();
+                        currentApi.setLocation(lat, longitude, alt);
+                        Thread.sleep(1000);
+
+                        Collection<Pokestop> pokestops = currentApi.getMap().getMapObjects().getPokestops();
                         if (NianticManager.this.currentBatchCall == myCurrentBatch) EventBus.getDefault().post(new PokestopsEvent(pokestops, lat, longitude));
                     }
 
@@ -440,12 +467,14 @@ public class NianticManager {
             public void run() {
             try {
 
-                if (mPokemonGo != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
-
+                PokemonGo currentApi = mPokemonGo.get(currentThread%nianticThreads);
+                currentThread++;
+                if (currentApi != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
                     Thread.sleep(133);
-                    mPokemonGo.setLocation(latitude, longitude, alt);
-                    Thread.sleep(5000);
-                    Collection<FortDataOuterClass.FortData> gyms = mPokemonGo.getMap().getMapObjects().getGyms();
+                    currentApi.setLocation(latitude, longitude, alt);
+                    Thread.sleep(1000);
+
+                    Collection<FortDataOuterClass.FortData> gyms = currentApi.getMap().getMapObjects().getGyms();
                     if (NianticManager.this.currentBatchCall == myCurrentBatch) EventBus.getDefault().post(new GymsEvent(gyms, latitude, longitude));
                 }
 
