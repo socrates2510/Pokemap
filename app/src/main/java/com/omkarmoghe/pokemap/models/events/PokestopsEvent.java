@@ -1,6 +1,7 @@
 package com.omkarmoghe.pokemap.models.events;
 
-import com.pokegoapi.api.map.fort.Pokestop;
+
+import com.wanderingcan.pokegoapi.api.map.fort.Pokestop;
 
 import java.util.Collection;
 

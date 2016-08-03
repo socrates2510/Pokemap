@@ -54,8 +54,8 @@ import com.omkarmoghe.pokemap.models.map.PokemonMarkerExtended;
 import com.omkarmoghe.pokemap.models.map.PokestopMarkerExtended;
 import com.omkarmoghe.pokemap.util.PokemonIdUtils;
 import com.omkarmoghe.pokemap.views.MainActivity;
-import com.pokegoapi.api.map.fort.Pokestop;
-import com.pokegoapi.api.map.pokemon.CatchablePokemon;
+import com.wanderingcan.pokegoapi.api.map.fort.Pokestop;
+import com.wanderingcan.pokegoapi.api.map.pokemon.CatchablePokemon;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;

@@ -1,7 +1,7 @@
 package com.omkarmoghe.pokemap.models.map;
 
 import com.google.android.gms.maps.model.Marker;
-import com.pokegoapi.api.map.fort.Pokestop;
+import com.wanderingcan.pokegoapi.api.map.fort.Pokestop;
 
 /**
  * Created by socrates on 7/25/2016.

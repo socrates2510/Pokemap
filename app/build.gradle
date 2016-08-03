@@ -53,7 +53,7 @@ dependencies {
     compile 'com.google.android.gms:play-services-location:9.2.1'
 
     //Pokemon Go API
-    compile 'com.github.Grover-c13:PokeGOAPI-Java:2e14fab7f0'
+    compile 'com.wanderingcan:pokegoapi:1.0.3'
 
     //Image handler
     compile 'com.github.bumptech.glide:glide:3.7.0'

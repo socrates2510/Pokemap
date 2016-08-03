@@ -3,8 +3,7 @@ package com.omkarmoghe.pokemap.util;
 import android.content.Context;
 import android.content.res.Resources;
 
-import com.omkarmoghe.pokemap.R;
-import com.pokegoapi.util.Log;
+
 
 import java.lang.reflect.Field;
 
