@@ -37,7 +37,7 @@ import com.omkarmoghe.pokemap.R;
 import com.omkarmoghe.pokemap.controllers.MarkerRefreshController;
 import com.omkarmoghe.pokemap.controllers.app_preferences.PokemapAppPreferences;
 import com.omkarmoghe.pokemap.controllers.app_preferences.PokemapSharedPreferences;
-import com.omkarmoghe.pokemap.controllers.map.LocationManager;
+import com.omkarmoghe.pokemap.controllers.location.PokemapLocationManager;
 import com.omkarmoghe.pokemap.controllers.net.NianticManager;
 import com.omkarmoghe.pokemap.helpers.MapHelper;
 import com.omkarmoghe.pokemap.helpers.RemoteImageLoader;
@@ -88,7 +88,7 @@ public class MapWrapperFragment extends Fragment implements OnMapReadyCallback,
 
     private static final String TAG = "MapWrapperFragment";
 
-    private LocationManager locationManager;
+    private PokemapLocationManager pokemapLocationManager;
     private NianticManager nianticManager;
 
     private PokemapAppPreferences mPref;
@@ -158,11 +158,11 @@ public class MapWrapperFragment extends Fragment implements OnMapReadyCallback,
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        locationManager = LocationManager.getInstance(getContext());
+        pokemapLocationManager = PokemapLocationManager.getInstance(getContext());
 
         nianticManager = NianticManager.getInstance();
 
-        locationManager.register(new LocationManager.Listener() {
+        pokemapLocationManager.register(new PokemapLocationManager.Listener() {
             @Override
             public void onLocationChanged(Location location) {
                 if (mLocation == null) {

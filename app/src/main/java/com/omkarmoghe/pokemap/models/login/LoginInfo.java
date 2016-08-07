@@ -40,6 +40,6 @@ public abstract class LoginInfo extends CredentialProvider {
 
     @Override
     public boolean isTokenIdExpired() {
-        return true;
+        return false;
     }
 }
