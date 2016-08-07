@@ -280,12 +280,15 @@ public class LoginActivity extends AppCompatActivity{
                 LoginActivity.this.autoLoginAccounts = temp.accounts.size();
 
                 LoginActivity.this.accounts = temp.accounts;
+
+                mNianticManager.initInternals(temp.accounts.size());
                 triggerAutoLogin();
             }
 
             @Override
             public void onFailure(Call<Accounts> call, Throwable t) {
                 Log.d("Login", "Failed to get response");
+                mNianticManager.initInternals(1);
                 showPTCLoginFailed();
             }
         });
