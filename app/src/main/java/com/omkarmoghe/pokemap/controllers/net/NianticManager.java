@@ -350,6 +350,8 @@ public class NianticManager {
             public void run() {
                 try {
                     PokemonGo currentApi = mPokemonGo.get(currentThread%nianticThreads);
+                    Log.d(TAG, "run: Min Refresh = " + currentApi.getSettings().getMapSettings().getMinRefresh());
+                    Log.d(TAG, "run: Distance = " + currentApi.getSettings().getMapSettings().getEncoungerRange());
                     currentThread++;
                     if (currentApi != null && NianticManager.this.currentBatchCall == myCurrentBatch) {
                         Thread.sleep(133);

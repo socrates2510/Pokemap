@@ -15,7 +15,7 @@ import android.util.Log;
 import com.google.android.gms.maps.model.LatLng;
 import com.omkarmoghe.pokemap.R;
 import com.omkarmoghe.pokemap.controllers.app_preferences.PokemapSharedPreferences;
-import com.omkarmoghe.pokemap.controllers.map.LocationManager;
+import com.omkarmoghe.pokemap.controllers.location.PokemapLocationManager;
 import com.omkarmoghe.pokemap.controllers.net.NianticManager;
 import com.omkarmoghe.pokemap.models.events.CatchablePokemonEvent;
 import com.omkarmoghe.pokemap.util.PokemonIdUtils;
@@ -43,7 +43,7 @@ public class PokemonNotificationService extends Service{
 
     private UpdateRunnable updateRunnable;
     private Thread workThread;
-    private LocationManager locationManager;
+    private PokemapLocationManager pokemapLocationManager;
     private NianticManager nianticManager;
     private NotificationCompat.Builder builder;
     private PokemapSharedPreferences preffs;
@@ -65,7 +65,7 @@ public class PokemonNotificationService extends Service{
 
         preffs = new PokemapSharedPreferences(this);
 
-        locationManager = LocationManager.getInstance(this);
+        pokemapLocationManager = PokemapLocationManager.getInstance(this);
         nianticManager = NianticManager.getInstance();
 
         updateRunnable = new UpdateRunnable(preffs.getServiceRefreshRate() * 1000);
@@ -73,7 +73,7 @@ public class PokemonNotificationService extends Service{
 
         initBroadcastReciever();
         workThread.start();
-        locationManager.onResume();
+        pokemapLocationManager.onResume();
 
         isRunning = true;
     }
@@ -140,7 +140,7 @@ public class PokemonNotificationService extends Service{
     public void onEvent(CatchablePokemonEvent event) {
         List<CatchablePokemon> catchablePokemon = event.getCatchablePokemon();
 
-        LatLng location = locationManager.getLocation();
+        LatLng location = pokemapLocationManager.getLatLng();
         Location myLoc = new Location("");
         myLoc.setLatitude(location.latitude);
         myLoc.setLongitude(location.longitude);
@@ -193,12 +193,12 @@ public class PokemonNotificationService extends Service{
 
                     while (isRunning) {
 
-                        LatLng currentLocation = locationManager.getLocation();
+                        LatLng currentLocation = pokemapLocationManager.getLatLng();
 
                         if (currentLocation != null){
                             nianticManager.getCatchablePokemon(currentLocation.latitude,currentLocation.longitude,0);
                         } else {
-                            locationManager = LocationManager.getInstance(PokemonNotificationService.this);
+                            pokemapLocationManager = PokemapLocationManager.getInstance(PokemonNotificationService.this);
                         }
 
                         // cyclic sleep
@@ -220,7 +220,7 @@ public class PokemonNotificationService extends Service{
         @Override
         public void onReceive(Context context, Intent intent) {
             stopSelf();
-            locationManager.onPause();
+            pokemapLocationManager.onPause();
         }
     };
 

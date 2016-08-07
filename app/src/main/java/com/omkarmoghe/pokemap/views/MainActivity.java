@@ -18,6 +18,7 @@ import android.view.View;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.omkarmoghe.pokemap.R;
+import com.omkarmoghe.pokemap.controllers.location.PokemapLocationManager;
 import com.omkarmoghe.pokemap.controllers.service.PokemonNotificationService;
 import com.omkarmoghe.pokemap.helpers.MapHelper;
 import com.omkarmoghe.pokemap.models.events.ClearMapEvent;
@@ -25,7 +26,6 @@ import com.omkarmoghe.pokemap.models.events.InternalExceptionEvent;
 import com.omkarmoghe.pokemap.models.events.LoginEventResult;
 import com.omkarmoghe.pokemap.models.events.SearchInPosition;
 import com.omkarmoghe.pokemap.models.events.ServerUnreachableEvent;
-import com.omkarmoghe.pokemap.controllers.map.LocationManager;
 import com.omkarmoghe.pokemap.views.map.MapWrapperFragment;
 import com.omkarmoghe.pokemap.views.settings.SettingsActivity;
 import com.omkarmoghe.pokemap.controllers.app_preferences.PokemapAppPreferences;
@@ -211,7 +211,7 @@ public class MainActivity extends BaseActivity {
 
         if (result.isLoggedIn()) {
 
-            LatLng latLng = LocationManager.getInstance(MainActivity.this).getLocation();
+            LatLng latLng = PokemapLocationManager.getInstance(MainActivity.this).getLatLng();
 
             if (latLng != null) {
                 nianticManager.getCatchablePokemon(latLng.latitude, latLng.longitude, 0D);
